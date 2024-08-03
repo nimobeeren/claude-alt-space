@@ -20,30 +20,73 @@ const prompt = process.argv[2];
 
 process.env.OUTPUT_FORMAT = "json";
 
-const { tabs } = JSON.parse(execSync("chrome-cli list tabs").toString());
+// Find the Claude tab if one is already open
+let tabs = JSON.parse(execSync("chrome-cli list tabs").toString()).tabs;
 let claudeTab = tabs.find((tab) => tab.url.startsWith("https://claude.ai/new"));
-if (!claudeTab) {
-  claudeTab = JSON.parse(
+
+// If there is a Claude tab open, get its info. Otherwise, open Claude in a new
+// window.
+let claudeTabInfo;
+if (claudeTab) {
+  claudeTabInfo = JSON.parse(execSync(`chrome-cli info -t ${claudeTab.id}`));
+} else {
+  claudeTabInfo = JSON.parse(
     execSync("chrome-cli open 'https://claude.ai/' -n").toString()
   );
 }
 
-const sendMessage = function (prompt) {
-  // TODO: wait for page to load
+// Wait for the tab to be loaded, then execute the script
+let interval = setInterval(() => {
+  if (claudeTabInfo.loading) {
+    claudeTabInfo = JSON.parse(
+      execSync(`chrome-cli info -t ${claudeTabInfo.id}`)
+    );
+  } else {
+    clearInterval(interval);
+    executeScript();
+  }
+}, 100);
 
-  const p = document.createElement("p");
-  p.textContent = prompt;
-  document
-    .querySelector('[aria-label="Write your prompt to Claude"] > div')
-    .replaceChildren(p);
+function executeScript() {
+  const script = async function (prompt) {
+    // Wait for prompt element to be on the page
+    let promptElement;
+    await new Promise((resolve) => {
+      let interval = setInterval(() => {
+        promptElement = document.querySelector(
+          '[aria-label="Write your prompt to Claude"] > div'
+        );
+        if (promptElement) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 100);
+    });
 
-  setTimeout(() => {
-    document.querySelector('[aria-label="Send Message"]').click();
-  }, 1000);
-};
+    // Set the prompt
+    const p = document.createElement("p");
+    p.textContent = prompt;
+    promptElement.replaceChildren(p);
 
-const functionString = sendMessage.toString().replaceAll(`'`, `'"'"'`); // escape single quotes for bash
-const promptString = prompt.replaceAll(`'`, `'"'"'`); // TODO: escape double quotes?
-execSync(
-  `chrome-cli execute '(${functionString})("${promptString}")' -t ${claudeTab.id}`
-);
+    // Wait for submit button to be on the page
+    let submitButton;
+    await new Promise((resolve) => {
+      let interval = setInterval(() => {
+        submitButton = document.querySelector('[aria-label="Send Message"]');
+        if (submitButton) {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 100);
+    });
+
+    // Submit the prompt
+    submitButton.click();
+  };
+
+  const functionString = script.toString().replaceAll(`'`, `'"'"'`); // escape single quotes for bash
+  const promptString = prompt.replaceAll(`'`, `'"'"'`); // TODO: escape double quotes?
+  execSync(
+    `chrome-cli execute '(${functionString})("${promptString}")' -t ${claudeTabInfo.id}`
+  );
+}
