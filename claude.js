@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 
+// Dependency: This script requires `chrome-cli` installed: https://github.com/prasmussen/chrome-cli
+// Install via homebrew: `brew install chrome-cli`
+
 // Required parameters:
 // @raycast.schemaVersion 1
-// @raycast.title Claude Prompt
+// @raycast.title Prompt Claude
 // @raycast.mode silent
+// @raycast.packageName Claude
 
 // Optional parameters:
 // @raycast.icon 🧠
@@ -19,6 +23,15 @@ const { execSync } = require("child_process");
 const prompt = process.argv[2];
 
 process.env.OUTPUT_FORMAT = "json";
+
+try {
+  execSync("which chrome-cli");
+} catch {
+  console.error(
+    "chrome-cli is required to run this script (https://github.com/prasmussen/chrome-cli)"
+  );
+  process.exit(1);
+}
 
 // Find the Claude tab if one is already open
 let tabs = JSON.parse(execSync("chrome-cli list tabs").toString()).tabs;
