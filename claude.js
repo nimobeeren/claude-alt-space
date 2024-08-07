@@ -108,7 +108,7 @@ function executeScript() {
     });
 
     // Submit the prompt
-    submitButton.focus();
+    submitButton.click();
   };
 
   const functionString = escapeShellString(script.toString());
