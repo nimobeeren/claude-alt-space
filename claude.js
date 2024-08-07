@@ -44,17 +44,21 @@ try {
 }
 
 // Find the Claude tab if one is already open
-let tabs = JSON.parse(execSync("chrome-cli list tabs").toString()).tabs;
-let claudeTab = tabs.find((tab) => tab.url.startsWith("https://claude.ai/new"));
+let tabs = JSON.parse(execSync("chrome-cli list tabs")).tabs;
+let claudeTab = tabs.find((tab) => tab.url.startsWith("https://claude.ai/"));
 
 // If there is a Claude tab open, get its info. Otherwise, open Claude in a new
 // window.
 let claudeTabInfo;
 if (claudeTab) {
+  // Open a new Claude session in the existing tab and focus it
+  execSync(`chrome-cli open 'https://claude.ai/new' -t ${claudeTab.id}`);
+  // Get tab info
   claudeTabInfo = JSON.parse(execSync(`chrome-cli info -t ${claudeTab.id}`));
 } else {
+  // Open a Claude session in a new window, focus it and return the tab info
   claudeTabInfo = JSON.parse(
-    execSync("chrome-cli open 'https://claude.ai/' -n").toString()
+    execSync("chrome-cli open 'https://claude.ai/new' -n")
   );
 }
 
@@ -104,7 +108,7 @@ function executeScript() {
     });
 
     // Submit the prompt
-    submitButton.click();
+    submitButton.focus();
   };
 
   const functionString = escapeShellString(script.toString());
