@@ -24,6 +24,16 @@ const prompt = process.argv[2];
 
 process.env.OUTPUT_FORMAT = "json";
 
+/** Escape a string so that it can be used in JavaScript code when wrapped in double quotes. */
+function escapeJsString(str) {
+  return str.replaceAll(`\\`, `\\\\`).replaceAll(`"`, `\\"`);
+}
+
+/** Escape a string so that it can be used in a shell command when wrapped in single quotes. */
+function escapeShellString(str) {
+  return str.replaceAll(`'`, `'"'"'`);
+}
+
 try {
   execSync("which chrome-cli");
 } catch {
@@ -97,8 +107,9 @@ function executeScript() {
     submitButton.click();
   };
 
-  const functionString = script.toString().replaceAll(`'`, `'"'"'`); // escape single quotes for bash
-  const promptString = prompt.replaceAll(`'`, `'"'"'`); // TODO: escape double quotes?
+  const functionString = escapeShellString(script.toString());
+  const promptString = escapeShellString(escapeJsString(prompt));
+
   execSync(
     `chrome-cli execute '(${functionString})("${promptString}")' -t ${claudeTabInfo.id}`
   );
