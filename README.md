@@ -14,3 +14,7 @@ This is a [Raycast](https://www.raycast.com/) script that opens and submits prom
 4. Click Add Script Directory
 5. Select the directory containing `claude.js` from this repository
 6. (Optional) Set a hotkey for the command, such as <kbd>⌥</kbd> <kbd>Space</kbd>
+
+## Demo
+
+https://github.com/user-attachments/assets/a7c5b38b-f6c3-4b70-8a45-42cdd9f5b961
